@@ -45,7 +45,7 @@ class ClaudeApiClient(private val apiKey: String) {
 
             val body = JSONObject().apply {
                 put("model", MODEL)
-                put("max_tokens", 1024)
+                put("max_tokens", 4096)
                 put("system", systemPrompt)
                 put("messages", messages)
             }

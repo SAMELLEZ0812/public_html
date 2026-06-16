@@ -25,13 +25,20 @@ class WilliCore(private val context: Context) {
     private val evaluationTriggers = listOf(
         "évalue", "analyse", "taux de réussite", "chances de", "probabilité",
         "penses-tu que ça marchera", "est-ce que ça va marcher", "risques",
-        "est-ce une bonne idée", "que penses-tu de ce projet", "avis sur"
+        "est-ce une bonne idée", "que penses-tu de ce projet", "avis sur",
+        "ça vaut le coup", "ça vaut le coût", "bonne décision", "mauvaise idée",
+        "rentable", "viable", "faisable", "stratégie", "plan d'action"
     )
 
     private val searchTriggers = listOf(
         "cherche", "recherche", "trouve", "qu'est-ce que", "c'est quoi",
         "renseigne-toi", "apprends", "actualité", "news", "que sais-tu de",
-        "parle-moi de", "explique-moi", "dis-moi tout sur", "qui est", "où est"
+        "parle-moi de", "explique-moi", "dis-moi tout sur", "qui est", "où est",
+        "comment fonctionne", "c'est quoi", "définition de", "prix de", "coût de",
+        "dernières nouvelles", "récemment", "aujourd'hui", "cette semaine",
+        "qui a gagné", "résultat de", "météo", "cours de", "taux de change",
+        "comment faire", "tutoriel", "guide pour", "meilleur moyen de",
+        "différence entre", "comparaison", "vs ", "contre ", "lequel est mieux"
     )
 
     // ─── Initialisation ───────────────────────────────────────────────────────
@@ -92,15 +99,15 @@ class WilliCore(private val context: Context) {
             confidence = 1.0f
         )
 
-        val result = client.chat(systemPrompt, conversationHistory.takeLast(12), enrichedMessage)
+        val result = client.chat(systemPrompt, conversationHistory.takeLast(20), enrichedMessage)
 
         return result.fold(
             onSuccess = { responseText ->
                 conversationHistory.add(ClaudeApiClient.Message("user", userMessage))
                 conversationHistory.add(ClaudeApiClient.Message("assistant", responseText))
 
-                if (conversationHistory.size > 24) {
-                    conversationHistory = conversationHistory.takeLast(24).toMutableList()
+                if (conversationHistory.size > 40) {
+                    conversationHistory = conversationHistory.takeLast(40).toMutableList()
                 }
 
                 val emotion = personalityEngine.extractEmotion(responseText)
@@ -279,10 +286,13 @@ class WilliCore(private val context: Context) {
         var score = 0.5f
         val importantKeywords = listOf(
             "nom", "appelle", "préfère", "aime", "déteste", "important",
-            "toujours", "jamais", "souviens", "n'oublie pas", "évaluation", "projet"
+            "toujours", "jamais", "souviens", "n'oublie pas", "évaluation", "projet",
+            "objectif", "but", "rêve", "famille", "travail", "business", "argent",
+            "santé", "problème", "aide-moi", "conseil", "décision", "avenir"
         )
         if (importantKeywords.any { userMsg.lowercase().contains(it) }) score += 0.3f
-        if (userMsg.length > 100) score += 0.1f
+        if (userMsg.length > 80) score += 0.1f
+        if (response.length > 300) score += 0.1f
         return score.coerceIn(0f, 1f)
     }
 
