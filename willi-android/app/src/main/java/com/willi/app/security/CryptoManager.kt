@@ -88,20 +88,4 @@ object CryptoManager {
         )
     }
 
-    // ─── Clé de chiffrement base de données SQLCipher ────────────────────────
-
-    fun getDatabasePassphrase(context: Context): ByteArray {
-        val prefs = getEncryptedPrefs(context)
-        val stored = prefs.getString("db_passphrase", null)
-
-        if (stored != null) {
-            return Base64.decode(stored, Base64.NO_WRAP)
-        }
-
-        // Génère une clé de 32 bytes aléatoires
-        val key = ByteArray(32)
-        java.security.SecureRandom().nextBytes(key)
-        prefs.edit().putString("db_passphrase", Base64.encodeToString(key, Base64.NO_WRAP)).apply()
-        return key
-    }
 }
