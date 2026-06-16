@@ -1,20 +1,22 @@
 package com.willi.app.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
+import android.util.Base64
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import android.util.Base64
 
 /**
  * Chiffrement AES-256-GCM via Android Keystore.
  * Les clés ne quittent jamais le Keystore matériel du téléphone.
+ * Utilise security-crypto 1.0.0 (API stable : MasterKeys pluriel).
  */
 object CryptoManager {
 
@@ -27,7 +29,6 @@ object CryptoManager {
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).also { it.load(null) }
-
         keyStore.getKey(KEYSTORE_ALIAS, null)?.let { return it as SecretKey }
 
         val keyGen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
@@ -39,22 +40,18 @@ object CryptoManager {
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setKeySize(256)
-                .setUserAuthenticationRequired(false) // auth gérée par BiometricGuard
                 .build()
         )
         return keyGen.generateKey()
     }
 
-    // ─── Chiffrement ─────────────────────────────────────────────────────────
+    // ─── Chiffrement AES-256-GCM ──────────────────────────────────────────────
 
     fun encrypt(plaintext: String): String {
         val cipher = Cipher.getInstance(AES_GCM)
         cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
-
         val iv = cipher.iv
         val cipherBytes = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
-
-        // Format: base64(iv) + "." + base64(ciphertext)
         return Base64.encodeToString(iv, Base64.NO_WRAP) + "." +
                Base64.encodeToString(cipherBytes, Base64.NO_WRAP)
     }
@@ -62,30 +59,23 @@ object CryptoManager {
     fun decrypt(encrypted: String): String {
         val parts = encrypted.split(".")
         if (parts.size != 2) return encrypted
-
         val iv = Base64.decode(parts[0], Base64.NO_WRAP)
         val cipherBytes = Base64.decode(parts[1], Base64.NO_WRAP)
-
         val cipher = Cipher.getInstance(AES_GCM)
         cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(GCM_TAG_LENGTH, iv))
-
         return String(cipher.doFinal(cipherBytes), Charsets.UTF_8)
     }
 
-    // ─── SharedPreferences chiffrées ──────────────────────────────────────────
+    // ─── SharedPreferences chiffrées (API security-crypto 1.0.0) ─────────────
 
-    fun getEncryptedPrefs(context: Context): android.content.SharedPreferences {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
+    fun getEncryptedPrefs(context: Context): SharedPreferences {
+        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         return EncryptedSharedPreferences.create(
-            context,
             "willi_secure_vault",
-            masterKey,
+            masterKeyAlias,
+            context,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     }
-
 }
