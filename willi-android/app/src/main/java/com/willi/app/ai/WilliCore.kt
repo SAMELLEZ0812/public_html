@@ -114,8 +114,8 @@ class WilliCore(private val context: Context) {
         val enrichedMessage = buildEnrichedMessage(userMessage, webContext, storedKnowledge)
 
         val client = apiClient ?: return WilliResponse(
-            text = "Je n'ai pas encore de connexion à mon cerveau... Il me faut une clé API, ${creatorName}.",
-            emotion = "confus",
+            text = diagnoseError(ClaudeApiClient.ApiError.NoApiKey(), creatorName),
+            emotion = "alerte",
             confidence = 1.0f
         )
 
@@ -151,13 +151,66 @@ class WilliCore(private val context: Context) {
                 )
             },
             onFailure = { error ->
-                WilliResponse(
-                    text = "Hmm... je rencontre une difficulté de connexion. ${error.message}",
-                    emotion = "confus",
-                    confidence = 0.5f
-                )
+                val msg = diagnoseError(error, creatorName)
+                WilliResponse(text = msg, emotion = "alerte", confidence = 1.0f)
             }
         )
+    }
+
+    private fun diagnoseError(error: Throwable, creatorName: String): String = when (error) {
+        is ClaudeApiClient.ApiError.NoApiKey ->
+            "DIAGNOSTIC — Clé API absente.\n\n" +
+            "Mon cerveau n'est pas connecté, $creatorName. " +
+            "Lance-moi et entre ta clé API Anthropic (sk-ant-...) dans le setup. " +
+            "Tu peux en créer une gratuitement sur console.anthropic.com."
+
+        is ClaudeApiClient.ApiError.InvalidKey ->
+            "DIAGNOSTIC — Clé API invalide ou expirée.\n\n" +
+            "La clé que tu as entrée ne fonctionne plus, $creatorName. " +
+            "Va sur console.anthropic.com → API Keys → Create Key. " +
+            "Copie la nouvelle clé et entre-la dans mon setup."
+
+        is ClaudeApiClient.ApiError.QuotaExceeded ->
+            "DIAGNOSTIC — Quota API atteint.\n\n" +
+            "J'ai consommé toutes les requêtes disponibles sur ton compte. " +
+            "Soit le quota se renouvelle dans quelques minutes, soit tu dois recharger " +
+            "ton crédit sur console.anthropic.com → Billing."
+
+        is ClaudeApiClient.ApiError.Overloaded ->
+            "DIAGNOSTIC — Serveurs Claude surchargés.\n\n" +
+            "Les serveurs Anthropic sont en surcharge en ce moment — ce n'est pas de notre côté. " +
+            "J'ai déjà réessayé automatiquement. Attends 30 secondes et reparle-moi."
+
+        is ClaudeApiClient.ApiError.ServerError ->
+            "DIAGNOSTIC — Erreur serveur Anthropic.\n\n" +
+            "Les serveurs de Claude rencontrent un problème technique temporaire. " +
+            "J'ai réessayé automatiquement. Si ça persiste, vérifie le statut sur status.anthropic.com."
+
+        is ClaudeApiClient.ApiError.NoInternet ->
+            "DIAGNOSTIC — Pas de connexion internet.\n\n" +
+            "Je ne peux pas atteindre les serveurs Claude. Vérifie :\n" +
+            "1. Ton WiFi ou tes données mobiles sont-ils actifs ?\n" +
+            "2. Es-tu en mode avion ?\n" +
+            "3. Ta connexion fonctionne-t-elle sur d'autres apps ?\n" +
+            "Dès que tu as du réseau, reparle-moi."
+
+        is ClaudeApiClient.ApiError.Timeout ->
+            "DIAGNOSTIC — Délai dépassé.\n\n" +
+            "La connexion aux serveurs Claude a pris trop longtemps. " +
+            "Ça arrive sur les réseaux lents ou instables. Reparle-moi — je réessaierai."
+
+        is ClaudeApiClient.ApiError.SslError ->
+            "DIAGNOSTIC — Erreur de sécurité réseau.\n\n" +
+            "Problème SSL détecté. Vérifie :\n" +
+            "1. L'heure de ton téléphone est-elle correcte ?\n" +
+            "2. Es-tu sur un réseau public ou VPN qui bloque les connexions ?\n" +
+            "Corrige ça et reparle-moi."
+
+        else ->
+            "DIAGNOSTIC — Erreur inattendue.\n\n" +
+            "Détail : ${error.message}\n\n" +
+            "Si ça se répète, dis-moi exactement ce que tu faisais — " +
+            "je vais analyser le problème et trouver une solution."
     }
 
     // ─── Évaluation stratégique ───────────────────────────────────────────────
