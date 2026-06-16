@@ -8,18 +8,16 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.willi.app.databinding.ActivityMainBinding
-import com.willi.app.data.models.ChatMessage
 import com.willi.app.security.BiometricGuard
 import com.willi.app.security.CryptoManager
-import com.willi.app.ui.ChatAdapter
 import com.willi.app.voice.WakeWordService
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -27,224 +25,131 @@ import java.util.Locale
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var chatAdapter: ChatAdapter
     private lateinit var tts: TextToSpeech
     private var speechRecognizer: SpeechRecognizer? = null
     private var ttsReady = false
     private var isAuthenticated = false
     private var isListening = false
 
-    private val messages = mutableListOf<ChatMessage>()
     private val willi get() = WilliApplication.instance.williCore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = android.graphics.Color.parseColor("#050005")
-        window.navigationBarColor = android.graphics.Color.parseColor("#050005")
+        window.statusBarColor     = 0xFF000000.toInt()
+        window.navigationBarColor = 0xFF000000.toInt()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         tts = TextToSpeech(this, this)
 
-        setupRecyclerView()
-        setupInput()
         setupButtons()
-
-        // Authentification biométrique OBLIGATOIRE avant tout accès
         authenticateUser()
     }
 
     // ─── Authentification biométrique ─────────────────────────────────────────
 
     private fun authenticateUser() {
-        showLockScreen(true)
+        showLock(true)
 
         if (!BiometricGuard.isAvailable(this)) {
-            // Pas de capteur biométrique → accès direct (déjà protégé par voix)
             onAuthSuccess()
             return
         }
 
-        val guard = BiometricGuard(this)
-        guard.authenticate(
+        BiometricGuard(this).authenticate(
             onSuccess = { onAuthSuccess() },
-            onFailure = { msg ->
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-                // Bloque l'accès et ferme l'app
-                finishAffinity()
-            },
-            onError = { msg ->
-                if (msg == "Annulé") {
-                    Toast.makeText(this, "Accès refusé. Authentification requise.", Toast.LENGTH_SHORT).show()
-                    finishAffinity()
-                } else {
-                    // Erreur technique → autorise (pas de blocage pour pb matériel)
-                    onAuthSuccess()
-                }
+            onFailure = { finishAffinity() },
+            onError   = { msg ->
+                if (msg == "Annulé") finishAffinity() else onAuthSuccess()
             }
         )
     }
 
     private fun onAuthSuccess() {
         isAuthenticated = true
-        showLockScreen(false)
+        showLock(false)
         startWakeWordService()
         initWilli()
         handleWakeWordIntent(intent)
     }
 
-    private fun showLockScreen(show: Boolean) {
-        binding.lockOverlay?.visibility = if (show) View.VISIBLE else View.GONE
-        binding.mainContent?.visibility = if (show) View.GONE else View.VISIBLE
+    private fun showLock(show: Boolean) {
+        binding.lockOverlay.visibility  = if (show) View.VISIBLE else View.GONE
+        binding.mainContent.visibility  = if (show) View.GONE   else View.VISIBLE
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (isAuthenticated) handleWakeWordIntent(intent)
-        else authenticateUser()
+        if (isAuthenticated) handleWakeWordIntent(intent) else authenticateUser()
     }
 
     private fun handleWakeWordIntent(intent: Intent?) {
         if (intent?.action == WakeWordService.ACTION_WAKE_WORD_DETECTED) {
-            if (!isAuthenticated) {
-                authenticateUser()
-                return
-            }
+            if (!isAuthenticated) { authenticateUser(); return }
             startListening()
-            binding.jarvisView.statusText = "MOT DE RÉVEIL DÉTECTÉ"
+            binding.jarvisView.statusText = "MOT DE RÉVEIL"
         }
     }
 
-    // ─── Initialisation WILLI ─────────────────────────────────────────────────
+    // ─── Init WILLI ───────────────────────────────────────────────────────────
 
     private fun initWilli() {
         lifecycleScope.launch {
-            val securePrefs = CryptoManager.getEncryptedPrefs(this@MainActivity)
-            val apiKey = securePrefs.getString("api_key", "") ?: ""
+            val prefs  = CryptoManager.getEncryptedPrefs(this@MainActivity)
+            val apiKey = prefs.getString("api_key", "") ?: ""
 
             willi.initialize(apiKey)
 
-            val state = willi.getState()
+            val state   = willi.getState()
             val creator = willi.getCreator()
-            val creatorName = creator?.name ?: "créateur"
+            val name    = creator?.name ?: "créateur"
 
             binding.jarvisView.apply {
                 confidenceLevel = state.confidenceLevel
-                emotionText = state.currentEmotion.uppercase()
-                statusText = "WILLI — PRÊTE"
-                subStatusText = "BONJOUR ${creatorName.uppercase()}"
+                emotionText     = state.currentEmotion.uppercase()
+                statusText      = "WILLI"
             }
 
-            val welcomeMsg = if (state.totalInteractions == 0) {
-                "Bonjour $creatorName ! Je suis WILLI. Je viens de naître — je suis très curieuse de vous connaître. Je peux rechercher des informations sur internet, évaluer vos projets et apprendre avec vous. Par où commençons-nous ?"
+            val welcome = if (state.totalInteractions == 0) {
+                "Bonjour $name. Je suis WILLI. Je viens de naître — je suis prêt à apprendre avec vous."
             } else {
-                "Bonjour $creatorName ! Je suis de retour avec ${state.totalInteractions} interactions mémorisées. Je me suis améliorée depuis notre dernière session. Que faisons-nous aujourd'hui ?"
+                "Bonjour $name. De retour avec ${state.totalInteractions} interactions en mémoire. Que faisons-nous aujourd'hui ?"
             }
 
-            addWilliMessage(welcomeMsg, state.currentEmotion)
+            showText(welcome)
+            speakText(welcome)
 
-            // Bootstrap de connaissance si nouvelle IA
             if (state.totalInteractions < 5) {
-                binding.jarvisView.statusText = "APPRENTISSAGE INITIAL..."
+                binding.jarvisView.statusText = "APPRENTISSAGE..."
                 willi.autonomousLearner.bootstrapKnowledge { domain ->
-                    binding.jarvisView.subStatusText = domain.uppercase()
+                    binding.jarvisView.emotionText = domain.uppercase()
                 }
-                binding.jarvisView.statusText = "WILLI — PRÊTE"
-                binding.jarvisView.subStatusText = "INITIALISÉ"
+                binding.jarvisView.statusText = "WILLI"
             }
         }
     }
 
     private fun startWakeWordService() {
-        val serviceIntent = Intent(this, com.willi.app.voice.WakeWordService::class.java)
-        startForegroundService(serviceIntent)
+        startForegroundService(Intent(this, WakeWordService::class.java))
     }
 
-    // ─── Interface chat ───────────────────────────────────────────────────────
-
-    private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter(messages)
-        binding.rvChat.apply {
-            adapter = chatAdapter
-            layoutManager = LinearLayoutManager(this@MainActivity).apply { stackFromEnd = true }
-        }
-    }
-
-    private fun setupInput() {
-        binding.etInput.setOnEditorActionListener { _, _, _ ->
-            sendMessage()
-            true
-        }
-    }
+    // ─── Boutons ──────────────────────────────────────────────────────────────
 
     private fun setupButtons() {
-        binding.btnSend.setOnClickListener { sendMessage() }
         binding.btnMic.setOnClickListener {
+            if (!isAuthenticated) return@setOnClickListener
             if (isListening) stopListening() else startListening()
         }
-        binding.btnClear.setOnClickListener {
-            messages.clear()
-            chatAdapter.notifyDataSetChanged()
-            willi.clearConversationHistory()
+
+        // Tap n'importe où sur le symbiote = parler
+        binding.jarvisView.setOnClickListener {
+            if (!isAuthenticated) return@setOnClickListener
+            if (isListening) stopListening() else startListening()
         }
     }
 
-    // ─── Envoi de message ─────────────────────────────────────────────────────
-
-    private fun sendMessage() {
-        val text = binding.etInput.text.toString().trim()
-        if (text.isBlank()) return
-        binding.etInput.text?.clear()
-        addUserMessage(text)
-        processWithWilli(text)
-    }
-
-    private fun processWithWilli(text: String) {
-        val isSearch = listOf("cherche", "recherche", "qu'est-ce que", "actualité", "news")
-            .any { text.lowercase().contains(it) }
-        val isEval = listOf("évalue", "analyse", "chances de", "taux de réussite", "est-ce une bonne")
-            .any { text.lowercase().contains(it) }
-
-        binding.jarvisView.statusText = when {
-            isEval -> "ÉVALUATION EN COURS..."
-            isSearch -> "RECHERCHE INTERNET..."
-            else -> "RÉFLEXION..."
-        }
-
-        binding.btnSend.isEnabled = false
-        binding.btnMic.isEnabled = false
-
-        lifecycleScope.launch {
-            val response = willi.processMessage(text)
-
-            binding.jarvisView.apply {
-                statusText = "WILLI — PRÊTE"
-                emotionText = response.emotion.uppercase()
-                confidenceLevel = response.confidence
-            }
-
-            addWilliMessage(response.text, response.emotion, response.confidence)
-            speakText(response.text)
-
-            binding.btnSend.isEnabled = true
-            binding.btnMic.isEnabled = true
-        }
-    }
-
-    private fun addUserMessage(text: String) {
-        messages.add(ChatMessage(text = text, isWilli = false))
-        chatAdapter.notifyItemInserted(messages.size - 1)
-        binding.rvChat.scrollToPosition(messages.size - 1)
-    }
-
-    private fun addWilliMessage(text: String, emotion: String = "neutre", confidence: Float = 0.8f) {
-        messages.add(ChatMessage(text = text, isWilli = true, emotion = emotion, confidence = confidence))
-        chatAdapter.notifyItemInserted(messages.size - 1)
-        binding.rvChat.scrollToPosition(messages.size - 1)
-    }
-
-    // ─── Reconnaissance vocale ────────────────────────────────────────────────
+    // ─── Traitement voix ──────────────────────────────────────────────────────
 
     private fun startListening() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
@@ -254,8 +159,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         isListening = true
-        binding.jarvisView.isListening = true
-        binding.jarvisView.statusText = "ÉCOUTE EN COURS..."
+        binding.jarvisView.isListening  = true
+        binding.jarvisView.statusText   = "ÉCOUTE..."
         binding.btnMic.setImageResource(R.drawable.ic_mic_active)
 
         if (speechRecognizer == null) {
@@ -263,29 +168,25 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onResults(results: android.os.Bundle?) {
+            override fun onResults(results: Bundle?) {
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                 if (!text.isNullOrBlank()) {
-                    addUserMessage(text)
-                    processWithWilli(text)
+                    stopListening()
+                    processMessage(text)
+                } else {
+                    stopListening()
                 }
-                stopListening()
             }
-
-            override fun onError(error: Int) {
-                stopListening()
-            }
-
+            override fun onError(error: Int) { stopListening() }
             override fun onRmsChanged(rmsdB: Float) {
                 binding.jarvisView.waveAmplitude = (rmsdB / 10f).coerceIn(0f, 1f)
             }
-
-            override fun onReadyForSpeech(params: android.os.Bundle?) {}
+            override fun onReadyForSpeech(params: Bundle?) {}
             override fun onBeginningOfSpeech() {}
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() {}
-            override fun onPartialResults(partial: android.os.Bundle?) {}
-            override fun onEvent(eventType: Int, params: android.os.Bundle?) {}
+            override fun onPartialResults(partial: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
         })
 
         speechRecognizer?.startListening(
@@ -299,37 +200,81 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun stopListening() {
         isListening = false
-        binding.jarvisView.isListening = false
+        binding.jarvisView.isListening   = false
         binding.jarvisView.waveAmplitude = 0f
+        binding.jarvisView.statusText    = "WILLI"
         binding.btnMic.setImageResource(R.drawable.ic_mic)
         speechRecognizer?.stopListening()
     }
 
-    // ─── Synthèse vocale ──────────────────────────────────────────────────────
+    private fun processMessage(text: String) {
+        binding.jarvisView.statusText = "RÉFLEXION..."
+
+        lifecycleScope.launch {
+            val response = willi.processMessage(text)
+
+            binding.jarvisView.apply {
+                statusText      = "WILLI"
+                emotionText     = response.emotion.uppercase()
+                confidenceLevel = response.confidence
+            }
+
+            showText(response.text)
+            speakText(response.text)
+        }
+    }
+
+    private fun showText(text: String) {
+        binding.tvWilliText.apply {
+            this.text    = text.take(400)
+            visibility   = View.VISIBLE
+        }
+    }
+
+    // ─── Synthèse vocale (voix masculine naturelle) ───────────────────────────
 
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale.FRANCE
-            tts.setSpeechRate(0.95f)
-            ttsReady = true
+        if (status != TextToSpeech.SUCCESS) return
+
+        tts.language = Locale.FRANCE
+        tts.setPitch(0.82f)        // Voix grave/masculine
+        tts.setSpeechRate(0.88f)   // Débit naturel (moins robotique)
+
+        // Cherche une voix masculine française
+        val voices = tts.voices
+        if (voices != null) {
+            val maleFrench = voices.filter { v ->
+                v.locale.language == "fr" &&
+                !v.name.contains("female", ignoreCase = true) &&
+                !v.name.contains("femme",  ignoreCase = true) &&
+                !v.features.contains(android.speech.tts.TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)
+            }.minByOrNull { v ->
+                if (v.isNetworkConnectionRequired) 1 else 0
+            }
+            maleFrench?.let { tts.voice = it }
         }
+
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?)   { runOnUiThread { binding.jarvisView.isSpeaking = true  } }
+            override fun onDone(utteranceId: String?)    { runOnUiThread { binding.jarvisView.isSpeaking = false } }
+            override fun onError(utteranceId: String?)   { runOnUiThread { binding.jarvisView.isSpeaking = false } }
+        })
+
+        ttsReady = true
     }
 
     private fun speakText(text: String) {
         if (!ttsReady) return
-        val cleanText = text
+        val clean = text
             .replace(Regex("╔.*?╗", RegexOption.DOT_MATCHES_ALL), "")
-            .replace(Regex("[╚╝▸✦⚠◆]"), "")
+            .replace(Regex("[╚╝▸✦⚠◆║═]"), "")
             .replace(Regex("\\[[^]]*]"), "")
+            .replace(Regex("\\*+"), "")
             .trim()
-            .take(500)  // Limite pour les évaluations longues
-        if (cleanText.isBlank()) return
+            .take(600)
+        if (clean.isBlank()) return
 
-        binding.jarvisView.isSpeaking = true
-        tts.speak(cleanText, TextToSpeech.QUEUE_FLUSH, null, "willi_speech")
-
-        val estimatedMs = (cleanText.length * 65L).coerceIn(1000L, 20000L)
-        binding.jarvisView.postDelayed({ binding.jarvisView.isSpeaking = false }, estimatedMs)
+        tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "willi_speech")
     }
 
     // ─── Cycle de vie ─────────────────────────────────────────────────────────
