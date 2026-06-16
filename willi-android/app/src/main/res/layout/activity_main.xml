@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#050005">
+
+    <!-- Interface JARVIS en arrière-plan -->
+    <com.willi.app.ui.JarvisView
+        android:id="@+id/jarvisView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Zone de chat en overlay semi-transparent -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingTop="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:background="#88050005">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="W I L L I"
+                android:textColor="#FF1744"
+                android:textSize="22sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.3" />
+
+            <ImageButton
+                android:id="@+id/btnClear"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_clear"
+                android:background="@null"
+                android:tint="#660011" />
+
+        </LinearLayout>
+
+        <!-- Chat messages -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvChat"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="8dp"
+            android:clipToPadding="false" />
+
+        <!-- Zone de saisie -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical"
+            android:background="#CC050005">
+
+            <ImageButton
+                android:id="@+id/btnMic"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_mic"
+                android:background="@drawable/bg_mic_button"
+                android:tint="#FF1744"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Parlez à WILLI..."
+                android:textColor="#FFE4E4"
+                android:textColorHint="#660011"
+                android:fontFamily="monospace"
+                android:textSize="14sp"
+                android:background="@drawable/bg_input"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:inputType="textMultiLine"
+                android:maxLines="3"
+                android:imeOptions="actionSend"
+                android:layout_marginEnd="8dp" />
+
+            <ImageButton
+                android:id="@+id/btnSend"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_send"
+                android:background="@drawable/bg_send_button"
+                android:tint="#FFE4E4" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

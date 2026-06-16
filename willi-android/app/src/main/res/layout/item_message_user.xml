@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp"
+    android:gravity="end">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CRÉATEUR  ●"
+        android:textColor="#886666"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_user_message"
+        android:padding="16dp"
+        android:layout_gravity="end">
+
+        <TextView
+            android:id="@+id/tvMessageText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFE4E4"
+            android:textSize="15sp"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="4dp" />
+
+        <TextView
+            android:id="@+id/tvMessageMeta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:layout_marginTop="6dp"
+            android:textColor="#886666" />
+
+    </LinearLayout>
+
+</LinearLayout>
