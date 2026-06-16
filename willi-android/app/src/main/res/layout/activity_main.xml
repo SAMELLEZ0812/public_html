@@ -4,58 +4,66 @@
     android:layout_height="match_parent"
     android:background="#050005">
 
-    <!-- Interface JARVIS en arrière-plan -->
-    <com.willi.app.ui.JarvisView
-        android:id="@+id/jarvisView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- Zone de chat en overlay semi-transparent -->
+    <!-- Contenu principal (masqué avant auth biométrique) -->
     <LinearLayout
+        android:id="@+id/mainContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingTop="16dp">
+        android:visibility="gone">
 
-        <!-- Header -->
-        <LinearLayout
+        <!-- Interface JARVIS en arrière-plan -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:background="#88050005">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="W I L L I"
-                android:textColor="#FF1744"
-                android:textSize="22sp"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:letterSpacing="0.3" />
+            <com.willi.app.ui.JarvisView
+                android:id="@+id/jarvisView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
-            <ImageButton
-                android:id="@+id/btnClear"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_clear"
-                android:background="@null"
-                android:tint="#660011" />
+            <!-- Header transparent -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:background="#88050005">
 
-        </LinearLayout>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="W I L L I"
+                    android:textColor="#FF1744"
+                    android:textSize="22sp"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.3" />
+
+                <ImageButton
+                    android:id="@+id/btnClear"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_clear"
+                    android:background="@null"
+                    android:tint="#660011" />
+
+            </LinearLayout>
+
+        </FrameLayout>
 
         <!-- Chat messages -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvChat"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="220dp"
             android:paddingHorizontal="8dp"
-            android:paddingVertical="8dp"
-            android:clipToPadding="false" />
+            android:paddingVertical="4dp"
+            android:clipToPadding="false"
+            android:background="#AA050005" />
 
         <!-- Zone de saisie -->
         <LinearLayout
@@ -64,7 +72,7 @@
             android:orientation="horizontal"
             android:padding="12dp"
             android:gravity="center_vertical"
-            android:background="#CC050005">
+            android:background="#DD050005">
 
             <ImageButton
                 android:id="@+id/btnMic"
@@ -104,5 +112,64 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- Overlay de verrouillage biométrique -->
+    <FrameLayout
+        android:id="@+id/lockOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#050005"
+        android:visibility="visible">
+
+        <com.willi.app.ui.JarvisView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="WILLI"
+                android:textColor="#FF1744"
+                android:textSize="64sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="VÉRIFICATION D'IDENTITÉ"
+                android:textColor="#CC1122"
+                android:textSize="18sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Posez votre doigt sur le capteur"
+                android:textColor="#660011"
+                android:textSize="14sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="32dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ou dites « dis-moi Willy »"
+                android:textColor="#440009"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="8dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
 </FrameLayout>

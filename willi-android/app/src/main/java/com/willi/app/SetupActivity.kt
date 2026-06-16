@@ -148,7 +148,8 @@ class SetupActivity : AppCompatActivity() {
 
         val name = binding.etName.text.toString().trim()
         lifecycleScope.launch {
-            getSharedPreferences("willi_prefs", MODE_PRIVATE)
+            // Stockage chiffré de la clé API
+            com.willi.app.security.CryptoManager.getEncryptedPrefs(this@SetupActivity)
                 .edit().putString("api_key", apiKey).apply()
             saveSetup(apiKey, name)
         }

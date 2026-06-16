@@ -12,8 +12,8 @@ android {
         applicationId "com.willi.app"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0.0-birth"
+        versionCode 2
+        versionName "2.0.0-powered"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -77,6 +77,22 @@ dependencies {
     // Preferences
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.datastore:datastore-preferences:1.0.0'
+
+    // Biométrie (empreinte digitale + visage)
+    implementation 'androidx.biometric:biometric:1.1.0'
+
+    // Chiffrement données (AES-256)
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    // SQLCipher — chiffrement base de données
+    implementation 'net.zetetic:android-database-sqlcipher:4.5.4'
+    implementation 'androidx.sqlite:sqlite-ktx:2.3.1'
+
+    // Jsoup — parsing HTML pour apprentissage web
+    implementation 'org.jsoup:jsoup:1.17.2'
+
+    // WorkManager — tâches d'apprentissage en arrière-plan
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
