@@ -34,11 +34,23 @@ class WilliCore(private val context: Context) {
         "cherche", "recherche", "trouve", "qu'est-ce que", "c'est quoi",
         "renseigne-toi", "apprends", "actualité", "news", "que sais-tu de",
         "parle-moi de", "explique-moi", "dis-moi tout sur", "qui est", "où est",
-        "comment fonctionne", "c'est quoi", "définition de", "prix de", "coût de",
+        "comment fonctionne", "définition de", "prix de", "coût de",
         "dernières nouvelles", "récemment", "aujourd'hui", "cette semaine",
         "qui a gagné", "résultat de", "météo", "cours de", "taux de change",
         "comment faire", "tutoriel", "guide pour", "meilleur moyen de",
         "différence entre", "comparaison", "vs ", "contre ", "lequel est mieux"
+    )
+
+    private val diagnosticTriggers = listOf(
+        "bug", "erreur", "error", "crash", "plante", "marche pas", "fonctionne pas",
+        "ne fonctionne plus", "problème avec", "j'ai un problème", "j'ai un bug",
+        "pourquoi ça", "pourquoi mon", "pourquoi ma", "comment réparer",
+        "comment régler", "comment résoudre", "ça bug", "ça bloque",
+        "mal de", "j'ai mal", "symptôme", "douleur", "depuis hier", "depuis ce matin",
+        "mon téléphone", "mon pc", "mon ordinateur", "mon application", "mon code",
+        "exception", "null", "undefined", "failed", "cannot", "unable",
+        "ne s'allume plus", "ne répond plus", "écran noir", "lent", "freeze",
+        "panne", "défaut", "dysfonctionnement", "cassé", "en panne"
     )
 
     // ─── Initialisation ───────────────────────────────────────────────────────
@@ -73,8 +85,11 @@ class WilliCore(private val context: Context) {
             return processEvaluation(userMessage, state, creatorName)
         }
 
-        // 2. Recherche internet si nécessaire
-        val webContext = if (needsWebSearch(userMessage)) {
+        // 2. Mode diagnostic si l'utilisateur décrit un problème
+        val isDiagnostic = isDiagnosticRequest(userMessage)
+
+        // 3. Recherche internet si nécessaire
+        val webContext = if (needsWebSearch(userMessage) || isDiagnostic) {
             performWebSearch(userMessage)
         } else ""
 
@@ -89,7 +104,12 @@ class WilliCore(private val context: Context) {
 
         // 5. Construit le contexte complet
         val memorySummary = memoryManager.buildContextSummary()
-        val systemPrompt = personalityEngine.getSystemPrompt(state, creatorName, memorySummary)
+        val basePrompt = personalityEngine.getSystemPrompt(state, creatorName, memorySummary)
+        val systemPrompt = if (isDiagnostic) {
+            basePrompt + "\n\n[MODE ACTIF: DIAGNOSTIC]\nL'utilisateur décrit un problème. " +
+            "Applique la méthode de diagnostic en 5 étapes. Lis attentivement, identifie la cause racine, " +
+            "propose une solution concrète. Sois précis comme un expert humain."
+        } else basePrompt
 
         val enrichedMessage = buildEnrichedMessage(userMessage, webContext, storedKnowledge)
 
@@ -256,6 +276,11 @@ class WilliCore(private val context: Context) {
     private fun needsWebSearch(message: String): Boolean {
         val lower = message.lowercase()
         return searchTriggers.any { lower.contains(it) }
+    }
+
+    private fun isDiagnosticRequest(message: String): Boolean {
+        val lower = message.lowercase()
+        return diagnosticTriggers.any { lower.contains(it) }
     }
 
     private fun extractSearchQuery(message: String): String {
