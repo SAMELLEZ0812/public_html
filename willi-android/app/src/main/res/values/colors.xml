@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorBackground">#050005</color>
+    <color name="colorPrimary">#CC1122</color>
+    <color name="colorBright">#FF1744</color>
+    <color name="colorAccent">#FF5252</color>
+    <color name="colorDim">#660011</color>
+    <color name="colorGlow">#FF0022</color>
+    <color name="colorText">#FFE4E4</color>
+    <color name="colorGrid">#2A0008</color>
+    <color name="colorSurface">#0A0005</color>
+</resources>

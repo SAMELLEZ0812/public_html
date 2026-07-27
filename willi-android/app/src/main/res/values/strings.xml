@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WILLI</string>
+    <string name="wake_word">dis-moi Willy</string>
+    <string name="willi_listening">WILLI vous écoute</string>
+    <string name="willi_thinking">WILLI réfléchit</string>
+    <string name="willi_ready">WILLI — PRÊTE</string>
+</resources>

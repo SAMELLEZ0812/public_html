@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Contenu principal — visible après auth biométrique -->
+    <FrameLayout
+        android:id="@+id/mainContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <!-- Entité symbiote plein écran -->
+        <com.willi.app.ui.JarvisView
+            android:id="@+id/jarvisView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Texte de réponse WILLI en bas (style sous-titre) -->
+        <TextView
+            android:id="@+id/tvWilliText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="130dp"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="12dp"
+            android:text=""
+            android:textColor="#FFE4E4"
+            android:textSize="15sp"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.35"
+            android:background="#CC000000"
+            android:visibility="invisible" />
+
+        <!-- Bouton micro centré en bas -->
+        <ImageButton
+            android:id="@+id/btnMic"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="32dp"
+            android:src="@drawable/ic_mic"
+            android:background="@drawable/bg_mic_button"
+            android:tint="#FF1744"
+            android:scaleType="center"
+            android:contentDescription="Parler à WILLI" />
+
+    </FrameLayout>
+
+    <!-- Overlay de verrouillage biométrique -->
+    <FrameLayout
+        android:id="@+id/lockOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:visibility="visible">
+
+        <com.willi.app.ui.JarvisView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="WILLI"
+                android:textColor="#CC0011"
+                android:textSize="72sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="IDENTIFIEZ-VOUS"
+                android:textColor="#880011"
+                android:textSize="16sp"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.3"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Posez votre doigt sur le capteur"
+                android:textColor="#440008"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="40dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</FrameLayout>

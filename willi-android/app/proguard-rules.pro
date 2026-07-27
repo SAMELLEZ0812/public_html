@@ -1,0 +1,6 @@
+-keep class com.willi.app.data.models.** { *; }
+-keep class com.willi.app.ai.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn okhttp3.**
+-dontwarn okio.**

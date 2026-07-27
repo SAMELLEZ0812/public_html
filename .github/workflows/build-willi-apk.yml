@@ -1,0 +1,75 @@
+name: Build WILLI APK
+
+on:
+  push:
+    branches: [ "claude/computer-access-question-wrg7kt", "main" ]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - name: Create local.properties
+        working-directory: willi-android
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> local.properties
+
+      - name: Make gradlew executable
+        working-directory: willi-android
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        working-directory: willi-android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=512m"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: WILLI-APK-debug
+          path: willi-android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: willi-v${{ github.run_number }}
+          name: "WILLI v${{ github.run_number }} — Télécharge l'APK ici"
+          files: willi-android/app/build/outputs/apk/debug/app-debug.apk
+          body: |
+            ## WILLI — Intelligence Artificielle Personnelle
+
+            👇 Clique sur **app-debug.apk** ci-dessous pour télécharger et installer WILLI sur ton Android.
+
+            ### Installation :
+            1. Télécharge **app-debug.apk**
+            2. Ouvre-le sur ton téléphone
+            3. Autorise l'installation depuis sources inconnues si demandé
+            4. Lance WILLI et enregistre ton empreinte digitale
+          prerelease: false

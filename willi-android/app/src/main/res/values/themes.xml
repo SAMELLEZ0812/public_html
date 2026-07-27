@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Willi" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#CC1122</item>
+        <item name="colorPrimaryVariant">#8B0000</item>
+        <item name="colorOnPrimary">#FFE4E4</item>
+        <item name="colorSecondary">#FF1744</item>
+        <item name="colorSecondaryVariant">#660011</item>
+        <item name="colorOnSecondary">#FFE4E4</item>
+        <item name="android:colorBackground">#050005</item>
+        <item name="colorSurface">#0A0005</item>
+        <item name="colorOnSurface">#FFE4E4</item>
+        <item name="android:windowBackground">#050005</item>
+        <item name="android:statusBarColor">#050005</item>
+        <item name="android:navigationBarColor">#050005</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="editTextColor">#FFE4E4</item>
+        <item name="colorControlNormal">#CC1122</item>
+        <item name="colorControlActivated">#FF1744</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Willi.Body</item>
+    </style>
+
+    <style name="TextAppearance.Willi.Body" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textColor">#FFE4E4</item>
+    </style>
+
+</resources>
